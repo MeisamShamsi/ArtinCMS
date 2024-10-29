@@ -229,7 +229,7 @@ def index():
                 if recharge_from_backup_fund_profits != '':
                     total_recharge_from_backup_fund += float(recharge_from_backup_fund_profits)
                 if total_recharge_from_backup_fund > 0:
-                    backup_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_backup_fund:,.2f}</span>)'
+                    backup_fund_balance_formatted += f' <span class="recharge-amount">-{total_recharge_from_backup_fund:,.2f}</span>'
 
                 total_recharge_from_fixed_income_fund = 0.0
                 if recharge_from_fixed_income_profits != '':
@@ -238,7 +238,7 @@ def index():
                     total_recharge_from_fixed_income_fund += float(recharge_from_fixed_income_principal)
                 if total_recharge_from_fixed_income_fund > 0:
                     fixed_income_fund_balance_formatted = f'{fixed_income_fund_balance_numeric:,.2f}'
-                    fixed_income_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_fixed_income_fund:,.2f}</span>)'
+                    fixed_income_fund_balance_formatted += f' <span class="recharge-amount">-{total_recharge_from_fixed_income_fund:,.2f}</span>'
                 else:
                     fixed_income_fund_balance_formatted = f'{fixed_income_fund_balance_numeric:,.2f}'
 
