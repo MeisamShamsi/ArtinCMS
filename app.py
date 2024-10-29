@@ -51,15 +51,13 @@ def index():
                 'Month': [],
                 'Backup Fund Balance': [],
                 'Backup Fund Profit': [],
-                'Recharge from Backup Fund Profits': [],
-                'Recharge from Backup Fund Principal': [],
                 'Fixed Income Fund Balance': [],
                 'Fixed Income Fund Profit': [],
-                'Recharge from Fixed Income Profits': [],
-                'Recharge from Fixed Income Principal': [],
                 'Chance Fund Balance': [],
                 'Chance Fund Profit': [],
-                'Total Chance Fund Profit': []
+                'Total Chance Fund Profit': [],
+                'Backup Fund Balance Numeric': [],
+                'Fixed Income Fund Balance Numeric': []
             }
 
             # Initialize profits
@@ -172,6 +170,7 @@ def index():
                         # Use Fixed Income Fund profits
                         amount_from_fixed_income_profits = min(fixed_income_profits_available, recharge_needed)
                         fixed_income_profits_available -= amount_from_fixed_income_profits
+                        fixed_income_fund_balance -= amount_from_fixed_income_profits  # Reduce balance accordingly
                         recharge_amount += amount_from_fixed_income_profits
                         recharge_needed -= amount_from_fixed_income_profits
                         if amount_from_fixed_income_profits > 0:
@@ -181,6 +180,26 @@ def index():
                         if recharge_needed > 0:
                             amount_from_backup_fund_profits = min(backup_fund_profits_available, recharge_needed)
                             backup_fund_profits_available -= amount_from_backup_fund_profits
+                            # Reduce backup fund balance accordingly
+                            # Remove investments corresponding to the profits used
+                            investments_removed = 0.0
+                            new_backup_investments = []
+                            amount_to_remove = amount_from_backup_fund_profits
+                            for investment in backup_fund_investments:
+                                if investments_removed < amount_to_remove:
+                                    amount_needed = amount_to_remove - investments_removed
+                                    if investment['amount'] <= amount_needed:
+                                        investments_removed += investment['amount']
+                                        # Skip adding this investment to new list
+                                    else:
+                                        # Reduce the amount of this investment
+                                        investment['amount'] -= amount_needed
+                                        investments_removed += amount_needed
+                                        new_backup_investments.append(investment)
+                                else:
+                                    new_backup_investments.append(investment)
+                            backup_fund_investments = new_backup_investments
+
                             recharge_amount += amount_from_backup_fund_profits
                             recharge_needed -= amount_from_backup_fund_profits
                             if amount_from_backup_fund_profits > 0:
@@ -204,9 +223,10 @@ def index():
                             # Adjust backup fund investments
                             investments_removed = 0.0
                             new_backup_investments = []
+                            amount_to_remove = amount_from_backup_fund_principal
                             for investment in backup_fund_investments:
-                                if investments_removed < amount_from_backup_fund_principal:
-                                    amount_needed = amount_from_backup_fund_principal - investments_removed
+                                if investments_removed < amount_to_remove:
+                                    amount_needed = amount_to_remove - investments_removed
                                     if investment['amount'] <= amount_needed:
                                         investments_removed += investment['amount']
                                         # Skip adding this investment to new list
@@ -218,6 +238,7 @@ def index():
                                 else:
                                     new_backup_investments.append(investment)
                             backup_fund_investments = new_backup_investments
+
                             recharge_amount += amount_from_backup_fund_principal
                             recharge_needed -= amount_from_backup_fund_principal
                             if amount_from_backup_fund_principal > 0:
@@ -230,26 +251,50 @@ def index():
                     # When the chance fund is not updated, profit is zero
                     chance_fund_profit = 0.0  # No profit this month
 
+                # Calculate balances
+                backup_fund_balance = sum(inv['amount'] for inv in backup_fund_investments)
+                fixed_income_fund_balance_numeric = fixed_income_fund_balance
+
+                # Format balances with recharge amounts
+                backup_fund_balance_formatted = f'{backup_fund_balance:,.2f}'
+                # Sum recharge amounts from profits and principal
+                total_recharge_from_backup_fund = 0.0
+                if recharge_from_backup_fund_profits != '':
+                    total_recharge_from_backup_fund += float(recharge_from_backup_fund_profits)
+                if recharge_from_backup_fund_principal != '':
+                    total_recharge_from_backup_fund += float(recharge_from_backup_fund_principal)
+                if total_recharge_from_backup_fund > 0:
+                    backup_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_backup_fund:,.2f}</span>)'
+
+                total_recharge_from_fixed_income_fund = 0.0
+                if recharge_from_fixed_income_profits != '':
+                    total_recharge_from_fixed_income_fund += float(recharge_from_fixed_income_profits)
+                if recharge_from_fixed_income_principal != '':
+                    total_recharge_from_fixed_income_fund += float(recharge_from_fixed_income_principal)
+                if total_recharge_from_fixed_income_fund > 0:
+                    fixed_income_fund_balance_formatted = f'{fixed_income_fund_balance_numeric:,.2f}'
+                    fixed_income_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_fixed_income_fund:,.2f}</span>)'
+                else:
+                    fixed_income_fund_balance_formatted = f'{fixed_income_fund_balance_numeric:,.2f}'
+
                 # Record data for plotting
                 data['Month'].append(month)
-                data['Backup Fund Balance'].append(sum(inv['amount'] for inv in backup_fund_investments))
-                data['Backup Fund Profit'].append(backup_fund_profit)
-                data['Recharge from Backup Fund Profits'].append(recharge_from_backup_fund_profits)
-                data['Recharge from Backup Fund Principal'].append(recharge_from_backup_fund_principal)
-                data['Fixed Income Fund Balance'].append(fixed_income_fund_balance)
-                data['Fixed Income Fund Profit'].append(fixed_income_fund_profit)
-                data['Recharge from Fixed Income Profits'].append(recharge_from_fixed_income_profits)
-                data['Recharge from Fixed Income Principal'].append(recharge_from_fixed_income_principal)
-                data['Chance Fund Balance'].append(chance_fund_balance)
-                data['Chance Fund Profit'].append(chance_fund_profit)
-                data['Total Chance Fund Profit'].append(total_chance_fund_profit)
+                data['Backup Fund Balance'].append(backup_fund_balance_formatted)
+                data['Backup Fund Profit'].append(f'{backup_fund_profit:,.2f}')
+                data['Fixed Income Fund Balance'].append(fixed_income_fund_balance_formatted)
+                data['Fixed Income Fund Profit'].append(f'{fixed_income_fund_profit:,.2f}')
+                data['Chance Fund Balance'].append(f'{chance_fund_balance:,.2f}')
+                data['Chance Fund Profit'].append(f'{chance_fund_profit:,.2f}')
+                data['Total Chance Fund Profit'].append(f'{total_chance_fund_profit:,.2f}')
+                data['Backup Fund Balance Numeric'].append(backup_fund_balance)
+                data['Fixed Income Fund Balance Numeric'].append(fixed_income_fund_balance_numeric)
 
             # Create DataFrame
             df = pd.DataFrame(data)
 
             # Calculate final balances
-            final_backup_fund_balance = df['Backup Fund Balance'].iloc[-1]
-            final_fixed_income_fund_balance = df['Fixed Income Fund Balance'].iloc[-1]
+            final_backup_fund_balance = data['Backup Fund Balance Numeric'][-1]
+            final_fixed_income_fund_balance = data['Fixed Income Fund Balance Numeric'][-1]
             final_saving_fund_balance = saving_fund_balance  # Total saved in saving fund
             total_balance = final_backup_fund_balance + final_fixed_income_fund_balance
 
@@ -261,64 +306,26 @@ def index():
                 'Total of Backup and Fixed Income Funds': total_balance
             }
 
-            # Format numbers with commas
-            pd.options.display.float_format = '{:,.2f}'.format
-
-            # Specify the columns and order you want to display
+            # Convert DataFrame to HTML without the index
             display_columns = [
                 'Month',
                 'Backup Fund Balance',
                 'Backup Fund Profit',
-                'Recharge from Backup Fund Profits',
-                'Recharge from Backup Fund Principal',
                 'Fixed Income Fund Balance',
                 'Fixed Income Fund Profit',
-                'Recharge from Fixed Income Profits',
-                'Recharge from Fixed Income Principal',
                 'Chance Fund Balance',
                 'Chance Fund Profit',
                 'Total Chance Fund Profit'
             ]
-
-            # Create a new DataFrame with selected columns
             df_display = df[display_columns]
-
-            # Convert numeric columns to strings with formatting
-            numeric_columns = [
-                'Backup Fund Balance',
-                'Backup Fund Profit',
-                'Recharge from Backup Fund Profits',
-                'Recharge from Backup Fund Principal',
-                'Fixed Income Fund Balance',
-                'Fixed Income Fund Profit',
-                'Recharge from Fixed Income Profits',
-                'Recharge from Fixed Income Principal',
-                'Chance Fund Balance',
-                'Chance Fund Profit',
-                'Total Chance Fund Profit'
-            ]
-
-            for col in numeric_columns:
-                df_display[col] = df_display[col].apply(lambda x: f'{x:,.2f}' if isinstance(x, (int, float)) else x)
-
-            # Add CSS classes for recharge amounts
-            recharge_columns = [
-                'Recharge from Backup Fund Profits',
-                'Recharge from Backup Fund Principal',
-                'Recharge from Fixed Income Profits',
-                'Recharge from Fixed Income Principal'
-            ]
-
-            for col in recharge_columns:
-                df_display[col] = df_display[col].apply(lambda x: f'<span class="recharge-amount">{x}</span>' if x != '' else x)
 
             # Convert DataFrame to HTML without the index
             table_html = df_display.to_html(index=False, classes='table table-striped table-bordered', escape=False)
 
             # Generate the plot
             plt.figure(figsize=(10, 6))
-            plt.plot(df['Month'], df['Backup Fund Balance'].astype(float), label='Backup Fund Balance')
-            plt.plot(df['Month'], df['Fixed Income Fund Balance'].astype(float), label='Fixed Income Fund Balance')
+            plt.plot(df['Month'], df['Backup Fund Balance Numeric'], label='Backup Fund Balance')
+            plt.plot(df['Month'], df['Fixed Income Fund Balance Numeric'], label='Fixed Income Fund Balance')
             plt.plot(df['Month'], df['Chance Fund Balance'].astype(float), label='Chance Fund Balance')
             plt.plot(df['Month'], df['Total Chance Fund Profit'].astype(float), label='Total Chance Fund Profit', linestyle='--', color='orange')
             plt.xlabel('Month')
@@ -345,4 +352,4 @@ def index():
         return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
