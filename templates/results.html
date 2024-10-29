@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Simulation Results{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Simulation Results</h2>
+
+<!-- New table displaying final balances -->
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Fund</th>
+            <th>Final Total Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Backup Fund</td>
+            <td>{{ "{:,.2f}".format(final_balances['Backup Fund']) }}</td>
+        </tr>
+        <tr>
+            <td>Fixed Income Fund</td>
+            <td>{{ "{:,.2f}".format(final_balances['Fixed Income Fund']) }}</td>
+        </tr>
+        <tr>
+            <td>Saving Fund</td>
+            <td>{{ "{:,.2f}".format(final_balances['Saving Fund']) }}</td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <th>Total of Backup and Fixed Income Funds</th>
+            <th>{{ "{:,.2f}".format(final_balances['Total of Backup and Fixed Income Funds']) }}</th>
+        </tr>
+    </tfoot>
+</table>
+
+<!-- Existing code displaying the simulation results table -->
+<div class="table-responsive">
+    {{ table_html|safe }}
+</div>
+<div class="mt-4">
+    <img src="data:image/png;base64,{{ plot_url }}" alt="Plot" class="img-fluid">
+</div>
+<br>
+<a href="{{ url_for('index') }}" class="btn btn-secondary">Run Another Simulation</a>
+{% endblock %}

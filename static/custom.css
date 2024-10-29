@@ -1,0 +1,28 @@
+/* custom.css */
+
+/* Adjust the font size of table headers */
+table th {
+    font-size: 1.2rem;
+    background-color: #f8f9fa;
+}
+
+/* Adjust the font size of table cells */
+table td {
+    font-size: 1.2rem;
+}
+
+/* Style the form labels */
+.form-label {
+    font-weight: bold;
+}
+
+/* Adjust margins */
+body {
+    margin-bottom: 50px;
+}
+
+/* Style the plot image */
+img {
+    max-width: 100%;
+    height: auto;
+}

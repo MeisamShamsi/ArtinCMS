@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Capital Management Simulation{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Capital Management Simulation</h2>
+
+{% if error_message %}
+<div class="alert alert-danger">{{ error_message }}</div>
+{% endif %}
+
+<form method="post">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="initial_backup_fund" class="form-label">Initial Backup Fund:</label>
+            <input type="number" step="0.01" name="initial_backup_fund" class="form-control" id="initial_backup_fund" required>
+        </div>
+        <div class="col-md-6">
+            <label for="initial_fixed_income_fund" class="form-label">Initial Fixed Income Fund:</label>
+            <input type="number" step="0.01" name="initial_fixed_income_fund" class="form-control" id="initial_fixed_income_fund" required>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="initial_chance_fund" class="form-label">Initial Chance Fund:</label>
+            <input type="number" step="0.01" name="initial_chance_fund" class="form-control" id="initial_chance_fund" required>
+        </div>
+        <div class="col-md-6">
+            <label for="success_probability" class="form-label">Success Probability (0 to 1):</label>
+            <input type="number" step="0.01" name="success_probability" class="form-control" id="success_probability" required>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="chance_fund_profit_percentage" class="form-label">Profit Percentage (%):</label>
+            <input type="number" step="0.01" name="chance_fund_profit_percentage" class="form-control" id="chance_fund_profit_percentage" required>
+        </div>
+        <div class="col-md-6">
+            <label for="total_months" class="form-label">Total Months to Simulate:</label>
+            <input type="number" name="total_months" class="form-control" id="total_months" required>
+        </div>
+    </div>
+    <!-- New input field for Chance Fund Update Interval -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="chance_fund_update_interval" class="form-label">Chance Fund Update Interval (Months):</label>
+            <input type="number" name="chance_fund_update_interval" class="form-control" id="chance_fund_update_interval" required>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Run Simulation</button>
+</form>
+{% endblock %}
