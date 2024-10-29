@@ -33,10 +33,10 @@ img {
 }
 
 /* Optionally, add parentheses around recharge amounts using CSS */
-.recharge-amount::before {
+/* .recharge-amount::before {
     content: '(';
 }
 
 .recharge-amount::after {
     content: ')';
-}
+} */
