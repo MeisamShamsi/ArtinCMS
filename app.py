@@ -50,16 +50,18 @@ def index():
             data = {
                 'Month': [],
                 'Backup Fund Balance': [],
+                'Backup Fund Profit': [],
                 'Fixed Income Fund Balance': [],
+                'Fixed Income Fund Profit': [],
                 'Chance Fund Balance': [],
-                'Saving Fund Balance': [],
-                'Saving Fund Profit': [],
-                'Total Backup and Fixed Income Balance': []
+                'Chance Fund Profit': [],
+                'Total Chance Fund Profit': []
             }
 
             # Initialize profits
             fixed_income_profits_available = 0.0
             backup_fund_profits_available = 0.0
+            total_chance_fund_profit = 0.0  # Cumulative total chance fund profit
 
             # Add initial investment to backup fund investments
             backup_fund_investments.append({
@@ -86,13 +88,16 @@ def index():
 
             # Simulation loop
             for month in range(1, total_months + 1):
-                # Reset monthly saving fund profit
-                saving_fund_profit = 0.0
+                # Reset monthly profits
+                backup_fund_profit = 0.0
+                fixed_income_fund_profit = 0.0
+                chance_fund_profit = 0.0  # Profit for this month
 
                 # Fixed Income Fund - Monthly interest
                 fixed_income_interest = fixed_income_fund_balance * fixed_income_monthly_rate
                 fixed_income_fund_balance += fixed_income_interest
                 fixed_income_profits_available += fixed_income_interest
+                fixed_income_fund_profit = fixed_income_interest  # Profit for this month
 
                 # Backup Fund - Process investments
                 new_backup_investments = []
@@ -104,6 +109,7 @@ def index():
                         # Pay interest every 3 months
                         interest = investment['amount'] * (backup_fund_annual_rate / 4)
                         backup_fund_profits_available += interest
+                        backup_fund_profit += interest  # Profit for this month
                         investment['next_interest_in'] = 3
 
                     if investment['months_left'] == 0:
@@ -143,8 +149,10 @@ def index():
 
                         # Transfer remaining profit to Saving Fund
                         saving_fund_balance += profit
-                        saving_fund_profit += profit  # Record profit for this month
+                        chance_fund_profit = profit  # Profit for this month
+                        total_chance_fund_profit += chance_fund_profit
 
+                        # No need to adjust chance_fund_balance further
                     else:
                         # Chance Fund loses all money
                         chance_fund_balance = 0.0
@@ -201,17 +209,19 @@ def index():
                         # Now, set the chance fund balance
                         chance_fund_balance += recharge_amount
 
-                # Calculate total balance of Backup Fund and Fixed Income Fund
-                total_backup_and_fixed_income = sum(inv['amount'] for inv in backup_fund_investments) + fixed_income_fund_balance
+                else:
+                    # When the chance fund is not updated, profit is zero
+                    chance_fund_profit = 0.0  # No profit this month
 
                 # Record data for plotting
                 data['Month'].append(month)
                 data['Backup Fund Balance'].append(sum(inv['amount'] for inv in backup_fund_investments))
+                data['Backup Fund Profit'].append(backup_fund_profit)
                 data['Fixed Income Fund Balance'].append(fixed_income_fund_balance)
+                data['Fixed Income Fund Profit'].append(fixed_income_fund_profit)
                 data['Chance Fund Balance'].append(chance_fund_balance)
-                data['Saving Fund Balance'].append(saving_fund_balance)
-                data['Saving Fund Profit'].append(saving_fund_profit)
-                data['Total Backup and Fixed Income Balance'].append(total_backup_and_fixed_income)
+                data['Chance Fund Profit'].append(chance_fund_profit)
+                data['Total Chance Fund Profit'].append(total_chance_fund_profit)
 
             # Create DataFrame
             df = pd.DataFrame(data)
@@ -219,7 +229,7 @@ def index():
             # Calculate final balances
             final_backup_fund_balance = df['Backup Fund Balance'].iloc[-1]
             final_fixed_income_fund_balance = df['Fixed Income Fund Balance'].iloc[-1]
-            final_saving_fund_balance = df['Saving Fund Balance'].iloc[-1]
+            final_saving_fund_balance = saving_fund_balance  # Total saved in saving fund
             total_balance = final_backup_fund_balance + final_fixed_income_fund_balance
 
             # Prepare data for the additional table
@@ -232,17 +242,28 @@ def index():
 
             # Format numbers with commas
             pd.options.display.float_format = '{:,.2f}'.format
-            table_html = df.to_html(index=False, classes='table table-striped table-bordered', border=0)
+
+            # Specify the columns and order you want to display
+            display_columns = [
+                'Month',  # Column 1
+                'Backup Fund Balance',  # Column 2
+                'Backup Fund Profit',  # Column 3
+                'Fixed Income Fund Balance',  # Column 4
+                'Fixed Income Fund Profit',  # Column 5
+                'Chance Fund Balance',  # Column 6
+                'Chance Fund Profit',  # Column 7
+                'Total Chance Fund Profit'  # Column 8
+            ]
+
+            # Generate the HTML table with selected columns
+            table_html = df[display_columns].to_html(index=False, classes='table table-striped table-bordered', border=0)
 
             # Generate the plot
             plt.figure(figsize=(10, 6))
             plt.plot(df['Month'], df['Backup Fund Balance'], label='Backup Fund Balance')
             plt.plot(df['Month'], df['Fixed Income Fund Balance'], label='Fixed Income Fund Balance')
             plt.plot(df['Month'], df['Chance Fund Balance'], label='Chance Fund Balance')
-            plt.plot(df['Month'], df['Saving Fund Balance'], label='Saving Fund Balance')
-            plt.plot(df['Month'], df['Total Backup and Fixed Income Balance'], label='Total Backup and Fixed Income Fund Balance', linestyle='--', color='purple')
-            # Remove 'Saving Fund Profit' from the chart
-            # plt.bar(df['Month'], df['Saving Fund Profit'], color='orange', alpha=0.5, label='Saving Fund Profit')
+            plt.plot(df['Month'], df['Total Chance Fund Profit'], label='Total Chance Fund Profit', linestyle='--', color='orange')
             plt.xlabel('Month')
             plt.ylabel('Amount')
             plt.title('Capital Management Simulation')
@@ -267,4 +288,4 @@ def index():
         return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
