@@ -60,10 +60,11 @@ def index():
                 'Fixed Income Fund Balance Numeric': []
             }
 
-            # Initialize profits
+            # Initialize profits and recharge needed
             fixed_income_profits_available = 0.0
             backup_fund_profits_available = 0.0
             total_chance_fund_profit = 0.0  # Cumulative total chance fund profit
+            chance_fund_recharge_needed = 0.0  # Amount needed to recharge Chance Fund to initial value
 
             # Add initial investment to backup fund investments
             backup_fund_investments.append({
@@ -98,7 +99,6 @@ def index():
                 recharge_from_fixed_income_profits = ''
                 recharge_from_backup_fund_profits = ''
                 recharge_from_fixed_income_principal = ''
-                recharge_from_backup_fund_principal = ''
 
                 # Fixed Income Fund - Monthly interest
                 fixed_income_interest = fixed_income_fund_balance * fixed_income_monthly_rate
@@ -120,21 +120,17 @@ def index():
                         investment['next_interest_in'] = 3
 
                     if investment['months_left'] == 0:
-                        # Return principal after 12 months
-                        backup_fund_profits_available += investment['amount']
+                        # Investment has matured, reinvest the principal
+                        reinvestment = {
+                            'amount': investment['amount'],
+                            'months_left': 12,
+                            'next_interest_in': 3
+                        }
+                        new_backup_investments.append(reinvestment)
                     else:
                         new_backup_investments.append(investment)
 
                 backup_fund_investments = new_backup_investments
-
-                # Reinvest profits in Backup Fund
-                if backup_fund_profits_available > 0:
-                    backup_fund_investments.append({
-                        'amount': backup_fund_profits_available,
-                        'months_left': 12,
-                        'next_interest_in': 3
-                    })
-                    backup_fund_profits_available = 0.0
 
                 # Chance Fund - Update at specified intervals
                 if month in update_schedule:
@@ -151,6 +147,10 @@ def index():
                             amount_to_chance_fund = min(profit, amount_needed_to_initial)
                             chance_fund_balance += amount_to_chance_fund
                             profit -= amount_to_chance_fund
+                            # Update recharge needed
+                            chance_fund_recharge_needed -= amount_to_chance_fund
+                            if chance_fund_recharge_needed < 0:
+                                chance_fund_recharge_needed = 0.0
                         else:
                             amount_to_chance_fund = 0  # No need to add to Chance Fund balance
 
@@ -163,8 +163,10 @@ def index():
                     else:
                         # Chance Fund loses all money
                         chance_fund_balance = 0.0
+                        chance_fund_recharge_needed = initial_chance_fund_balance - chance_fund_balance  # Set recharge needed
+
                         # Recharge the Chance Fund
-                        recharge_needed = initial_chance_fund_balance
+                        recharge_needed = chance_fund_recharge_needed
                         recharge_amount = 0.0
 
                         # Use Fixed Income Fund profits
@@ -176,35 +178,6 @@ def index():
                         if amount_from_fixed_income_profits > 0:
                             recharge_from_fixed_income_profits = amount_from_fixed_income_profits
 
-                        # Use Backup Fund profits
-                        if recharge_needed > 0:
-                            amount_from_backup_fund_profits = min(backup_fund_profits_available, recharge_needed)
-                            backup_fund_profits_available -= amount_from_backup_fund_profits
-                            # Reduce backup fund balance accordingly
-                            # Remove investments corresponding to the profits used
-                            investments_removed = 0.0
-                            new_backup_investments = []
-                            amount_to_remove = amount_from_backup_fund_profits
-                            for investment in backup_fund_investments:
-                                if investments_removed < amount_to_remove:
-                                    amount_needed = amount_to_remove - investments_removed
-                                    if investment['amount'] <= amount_needed:
-                                        investments_removed += investment['amount']
-                                        # Skip adding this investment to new list
-                                    else:
-                                        # Reduce the amount of this investment
-                                        investment['amount'] -= amount_needed
-                                        investments_removed += amount_needed
-                                        new_backup_investments.append(investment)
-                                else:
-                                    new_backup_investments.append(investment)
-                            backup_fund_investments = new_backup_investments
-
-                            recharge_amount += amount_from_backup_fund_profits
-                            recharge_needed -= amount_from_backup_fund_profits
-                            if amount_from_backup_fund_profits > 0:
-                                recharge_from_backup_fund_profits = amount_from_backup_fund_profits
-
                         # Use Fixed Income Fund principal, but not below initial balance
                         if recharge_needed > 0:
                             max_amount_from_fixed_income_principal = fixed_income_fund_balance - initial_fixed_income_fund_balance
@@ -215,41 +188,36 @@ def index():
                             if amount_from_fixed_income_principal > 0:
                                 recharge_from_fixed_income_principal = amount_from_fixed_income_principal
 
-                        # Use Backup Fund principal, but not below initial balance
-                        if recharge_needed > 0:
-                            current_backup_fund_balance = sum(inv['amount'] for inv in backup_fund_investments)
-                            max_amount_from_backup_fund_principal = current_backup_fund_balance - initial_backup_fund_balance
-                            amount_from_backup_fund_principal = min(max_amount_from_backup_fund_principal, recharge_needed)
-                            # Adjust backup fund investments
-                            investments_removed = 0.0
-                            new_backup_investments = []
-                            amount_to_remove = amount_from_backup_fund_principal
-                            for investment in backup_fund_investments:
-                                if investments_removed < amount_to_remove:
-                                    amount_needed = amount_to_remove - investments_removed
-                                    if investment['amount'] <= amount_needed:
-                                        investments_removed += investment['amount']
-                                        # Skip adding this investment to new list
-                                    else:
-                                        # Reduce the amount of this investment
-                                        investment['amount'] -= amount_needed
-                                        investments_removed += amount_needed
-                                        new_backup_investments.append(investment)
-                                else:
-                                    new_backup_investments.append(investment)
-                            backup_fund_investments = new_backup_investments
-
-                            recharge_amount += amount_from_backup_fund_principal
-                            recharge_needed -= amount_from_backup_fund_principal
-                            if amount_from_backup_fund_principal > 0:
-                                recharge_from_backup_fund_principal = amount_from_backup_fund_principal
-
-                        # Now, set the chance fund balance
+                        # Update recharge needed and chance fund balance
+                        chance_fund_recharge_needed -= recharge_amount
                         chance_fund_balance += recharge_amount
+                        if chance_fund_recharge_needed < 0:
+                            chance_fund_recharge_needed = 0.0
 
                 else:
                     # When the chance fund is not updated, profit is zero
                     chance_fund_profit = 0.0  # No profit this month
+
+                # Use Backup Fund profits to recharge Chance Fund if needed before reinvesting
+                if backup_fund_profits_available > 0:
+                    # Before reinvesting, check if Chance Fund needs recharging
+                    if chance_fund_recharge_needed > 0:
+                        amount_to_recharge = min(backup_fund_profits_available, chance_fund_recharge_needed)
+                        chance_fund_balance += amount_to_recharge
+                        backup_fund_profits_available -= amount_to_recharge
+                        chance_fund_recharge_needed -= amount_to_recharge
+                        # For display purposes
+                        recharge_from_backup_fund_profits = amount_to_recharge
+                        if chance_fund_recharge_needed < 0:
+                            chance_fund_recharge_needed = 0.0
+                    # Reinvest any remaining profits
+                    if backup_fund_profits_available > 0:
+                        backup_fund_investments.append({
+                            'amount': backup_fund_profits_available,
+                            'months_left': 12,
+                            'next_interest_in': 3
+                        })
+                    backup_fund_profits_available = 0.0
 
                 # Calculate balances
                 backup_fund_balance = sum(inv['amount'] for inv in backup_fund_investments)
@@ -257,12 +225,9 @@ def index():
 
                 # Format balances with recharge amounts
                 backup_fund_balance_formatted = f'{backup_fund_balance:,.2f}'
-                # Sum recharge amounts from profits and principal
                 total_recharge_from_backup_fund = 0.0
                 if recharge_from_backup_fund_profits != '':
                     total_recharge_from_backup_fund += float(recharge_from_backup_fund_profits)
-                if recharge_from_backup_fund_principal != '':
-                    total_recharge_from_backup_fund += float(recharge_from_backup_fund_principal)
                 if total_recharge_from_backup_fund > 0:
                     backup_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_backup_fund:,.2f}</span>)'
 
@@ -352,4 +317,4 @@ def index():
         return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
