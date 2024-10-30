@@ -1,52 +1,95 @@
-{% extends "base.html" %}
-
-{% block title %}Capital Management Simulation{% endblock %}
-
-{% block content %}
-<h2 class="mb-4">Capital Management Simulation</h2>
-
-{% if error_message %}
-<div class="alert alert-danger">{{ error_message }}</div>
-{% endif %}
-
-<form method="post">
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="initial_backup_fund" class="form-label">Initial Backup Fund:</label>
-            <input type="number" step="0.01" name="initial_backup_fund" class="form-control" id="initial_backup_fund" required>
-        </div>
-        <div class="col-md-6">
-            <label for="initial_fixed_income_fund" class="form-label">Initial Fixed Income Fund:</label>
-            <input type="number" step="0.01" name="initial_fixed_income_fund" class="form-control" id="initial_fixed_income_fund" required>
-        </div>
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Capital Management Simulation</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <!-- Custom Styles -->
+    <style>
+        .form-icon {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            color: #495057;
+        }
+        .form-group {
+            position: relative;
+        }
+        .form-control {
+            padding-left: 40px;
+        }
+        .submit-button {
+            width: 100%;
+        }
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            padding-top: 50px;
+        }
+        h1 {
+            margin-bottom: 30px;
+        }
+        .input-group-text {
+            width: 42px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Capital Management Simulation</h1>
+        {% if error_message %}
+            <div class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+        {% endif %}
+        <form method="post">
+            <!-- Initial Backup Fund -->
+            <div class="form-group">
+                <label for="initial_backup_fund"><i class="fas fa-shield-alt"></i> Initial Backup Fund ($)</label>
+                <input type="number" class="form-control" id="initial_backup_fund" name="initial_backup_fund" placeholder="Enter initial backup fund amount" required step="0.01" min="0">
+            </div>
+            <!-- Initial Fixed Income Fund -->
+            <div class="form-group">
+                <label for="initial_fixed_income_fund"><i class="fas fa-piggy-bank"></i> Initial Fixed Income Fund ($)</label>
+                <input type="number" class="form-control" id="initial_fixed_income_fund" name="initial_fixed_income_fund" placeholder="Enter initial fixed income fund amount" required step="0.01" min="0">
+            </div>
+            <!-- Initial Chance Fund -->
+            <div class="form-group">
+                <label for="initial_chance_fund"><i class="fas fa-dice"></i> Initial Chance Fund ($)</label>
+                <input type="number" class="form-control" id="initial_chance_fund" name="initial_chance_fund" placeholder="Enter initial chance fund amount" required step="0.01" min="0">
+            </div>
+            <!-- Success Probability -->
+            <div class="form-group">
+                <label for="success_probability"><i class="fas fa-percentage"></i> Success Probability</label>
+                <input type="number" class="form-control" id="success_probability" name="success_probability" placeholder="Enter success probability (e.g., 0.25)" required step="0.01" min="0" max="1">
+            </div>
+            <!-- Chance Fund Profit Percentage -->
+            <div class="form-group">
+                <label for="chance_fund_profit_percentage"><i class="fas fa-chart-line"></i> Chance Fund Profit Percentage (%)</label>
+                <input type="number" class="form-control" id="chance_fund_profit_percentage" name="chance_fund_profit_percentage" placeholder="Enter chance fund profit percentage (e.g., 80)" required step="0.01" min="0">
+            </div>
+            <!-- Total Months -->
+            <div class="form-group">
+                <label for="total_months"><i class="far fa-calendar-alt"></i> Total Months</label>
+                <input type="number" class="form-control" id="total_months" name="total_months" placeholder="Enter total number of months for the simulation" required min="1">
+            </div>
+            <!-- Chance Fund Update Interval -->
+            <div class="form-group">
+                <label for="chance_fund_update_interval"><i class="fas fa-sync-alt"></i> Chance Fund Update Interval (Months)</label>
+                <input type="number" class="form-control" id="chance_fund_update_interval" name="chance_fund_update_interval" placeholder="Enter chance fund update interval in months" required min="1">
+            </div>
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary submit-button mt-4"><i class="fas fa-play"></i> Run Simulation</button>
+        </form>
     </div>
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="initial_chance_fund" class="form-label">Initial Chance Fund:</label>
-            <input type="number" step="0.01" name="initial_chance_fund" class="form-control" id="initial_chance_fund" required>
-        </div>
-        <div class="col-md-6">
-            <label for="success_probability" class="form-label">Success Probability (0 to 1):</label>
-            <input type="number" step="0.01" name="success_probability" class="form-control" id="success_probability" required>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="chance_fund_profit_percentage" class="form-label">Profit Percentage (%):</label>
-            <input type="number" step="0.01" name="chance_fund_profit_percentage" class="form-control" id="chance_fund_profit_percentage" required>
-        </div>
-        <div class="col-md-6">
-            <label for="total_months" class="form-label">Total Months to Simulate:</label>
-            <input type="number" name="total_months" class="form-control" id="total_months" required>
-        </div>
-    </div>
-    <!-- New input field for Chance Fund Update Interval -->
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="chance_fund_update_interval" class="form-label">Chance Fund Update Interval (Months):</label>
-            <input type="number" name="chance_fund_update_interval" class="form-control" id="chance_fund_update_interval" required>
-        </div>
-    </div>
-    <button type="submit" class="btn btn-primary">Run Simulation</button>
-</form>
-{% endblock %}
+    <!-- Bootstrap JS (Optional, for interactive components) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+</body>
+</html>
