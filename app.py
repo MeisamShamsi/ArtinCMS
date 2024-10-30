@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend suitable for servers
+matplotlib.use('Agg')  # Use a non-interactive backend suitable for servers
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import io
@@ -57,7 +57,10 @@ def index():
                 'Chance Fund Profit': [],
                 'Total Chance Fund Profit': [],
                 'Backup Fund Balance Numeric': [],
-                'Fixed Income Fund Balance Numeric': []
+                'Fixed Income Fund Balance Numeric': [],
+                'Chance Fund Profit Numeric': [],
+                'Total Chance Fund Profit Numeric': [],
+                'Total Assets': []
             }
 
             # Initialize profits and recharge needed
@@ -223,13 +226,19 @@ def index():
                 backup_fund_balance = sum(inv['amount'] for inv in backup_fund_investments)
                 fixed_income_fund_balance_numeric = fixed_income_fund_balance
 
+                # Total Chance Fund Profit (Numeric)
+                total_chance_fund_profit_numeric = total_chance_fund_profit
+
+                # Calculate Total Assets
+                total_assets = backup_fund_balance + fixed_income_fund_balance_numeric + total_chance_fund_profit_numeric
+
                 # Format balances with recharge amounts
                 backup_fund_balance_formatted = f'{backup_fund_balance:,.2f}'
                 total_recharge_from_backup_fund = 0.0
                 if recharge_from_backup_fund_profits != '':
                     total_recharge_from_backup_fund += float(recharge_from_backup_fund_profits)
                 if total_recharge_from_backup_fund > 0:
-                    backup_fund_balance_formatted += f' <span class="recharge-amount">-{total_recharge_from_backup_fund:,.2f}</span>'
+                    backup_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_backup_fund:,.2f}</span>)'
 
                 total_recharge_from_fixed_income_fund = 0.0
                 if recharge_from_fixed_income_profits != '':
@@ -238,7 +247,7 @@ def index():
                     total_recharge_from_fixed_income_fund += float(recharge_from_fixed_income_principal)
                 if total_recharge_from_fixed_income_fund > 0:
                     fixed_income_fund_balance_formatted = f'{fixed_income_fund_balance_numeric:,.2f}'
-                    fixed_income_fund_balance_formatted += f' <span class="recharge-amount">-{total_recharge_from_fixed_income_fund:,.2f}</span>'
+                    fixed_income_fund_balance_formatted += f' (<span class="recharge-amount">-{total_recharge_from_fixed_income_fund:,.2f}</span>)'
                 else:
                     fixed_income_fund_balance_formatted = f'{fixed_income_fund_balance_numeric:,.2f}'
 
@@ -253,6 +262,9 @@ def index():
                 data['Total Chance Fund Profit'].append(f'{total_chance_fund_profit:,.2f}')
                 data['Backup Fund Balance Numeric'].append(backup_fund_balance)
                 data['Fixed Income Fund Balance Numeric'].append(fixed_income_fund_balance_numeric)
+                data['Chance Fund Profit Numeric'].append(chance_fund_profit)
+                data['Total Chance Fund Profit Numeric'].append(total_chance_fund_profit_numeric)
+                data['Total Assets'].append(total_assets)
 
             # Create DataFrame
             df = pd.DataFrame(data)
@@ -261,14 +273,17 @@ def index():
             final_backup_fund_balance = data['Backup Fund Balance Numeric'][-1]
             final_fixed_income_fund_balance = data['Fixed Income Fund Balance Numeric'][-1]
             final_saving_fund_balance = saving_fund_balance  # Total saved in saving fund
+            final_total_chance_fund_profit = data['Total Chance Fund Profit Numeric'][-1]
             total_balance = final_backup_fund_balance + final_fixed_income_fund_balance
+            total_assets = total_balance + final_total_chance_fund_profit
 
             # Prepare data for the additional table
             final_balances = {
                 'Backup Fund': final_backup_fund_balance,
                 'Fixed Income Fund': final_fixed_income_fund_balance,
                 'Saving Fund': final_saving_fund_balance,
-                'Total of Backup and Fixed Income Funds': total_balance
+                'Total of Backup and Fixed Income Funds': total_balance,
+                'Total Assets': total_assets
             }
 
             # Convert DataFrame to HTML without the index
@@ -288,11 +303,11 @@ def index():
             table_html = df_display.to_html(index=False, classes='table table-striped table-bordered', escape=False)
 
             # Generate the plot
-            plt.figure(figsize=(10, 6))
+            plt.figure(figsize=(12, 8))
             plt.plot(df['Month'], df['Backup Fund Balance Numeric'], label='Backup Fund Balance')
             plt.plot(df['Month'], df['Fixed Income Fund Balance Numeric'], label='Fixed Income Fund Balance')
-            # plt.plot(df['Month'], df['Chance Fund Balance'].astype(float), label='Chance Fund Balance')
-            plt.plot(df['Month'], df['Total Chance Fund Profit'].astype(float), label='Chance Fund Balance', linestyle='--', color='green')
+            plt.plot(df['Month'], df['Total Chance Fund Profit Numeric'], label='Total Chance Fund Profit', linestyle='--')
+            plt.plot(df['Month'], df['Total Assets'], label='Total Assets', linestyle='-', linewidth=2, color='black')
             plt.xlabel('Month')
             plt.ylabel('Amount')
             plt.title('Capital Management Simulation')
